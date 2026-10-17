@@ -1,0 +1,15 @@
+# environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# user data: images, annotations, exports, settings
+data/
+
+# editor / OS
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db

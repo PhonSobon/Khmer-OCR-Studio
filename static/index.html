@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Khmer OCR Studio - build Khmer text detection and recognition datasets with the kiri-ocr models">
+<title>Khmer OCR Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<!-- ================= Header ================= -->
+<header class="topbar">
+  <button class="btn icon ghost panel-toggle" id="toggleLeft" title="Show / hide the Images panel (Ctrl+B)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path class="fill" d="M4 5h4.2v14H4z"/></svg></button>
+  <div class="brand">
+    <div class="logo">ក</div>
+    <div>
+      <div class="brand-name">Khmer OCR Studio</div>
+      <div class="brand-sub">Khmer text detection &amp; recognition</div>
+    </div>
+  </div>
+
+  <div class="project-picker">
+    <button class="btn ghost" id="projectBtn" title="Switch project">
+      <span class="muted small">Project</span>
+      <span id="projectName">—</span>
+      <svg width="12" height="12" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+    </button>
+    <div class="menu" id="projectMenu" hidden></div>
+  </div>
+
+  <!-- pipeline -->
+  <nav class="pipeline" id="pipeline">
+    <button class="stage" data-filter="new"><span class="dot s-new"></span><span class="lbl">New</span><b data-count="new">0</b></button>
+    <span class="arrow">›</span>
+    <button class="stage" data-filter="detected"><span class="dot s-detected"></span><span class="lbl">Check boxes</span><b data-count="detected">0</b></button>
+    <span class="arrow">›</span>
+    <button class="stage" data-filter="boxes_ok"><span class="dot s-boxes_ok"></span><span class="lbl">Boxes OK</span><b data-count="boxes_ok">0</b></button>
+    <span class="arrow">›</span>
+    <button class="stage" data-filter="recognized"><span class="dot s-recognized"></span><span class="lbl">Check text</span><b data-count="recognized">0</b></button>
+    <span class="arrow">›</span>
+    <button class="stage" data-filter="done"><span class="dot s-done"></span><span class="lbl">Done</span><b data-count="done">0</b></button>
+  </nav>
+
+  <div class="top-actions">
+    <button class="btn" id="detectAllBtn" title="Detect text lines on many images at once">
+      <svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 9h10M7 12h10M7 15h6"/></svg>
+      Detect all
+    </button>
+    <button class="btn" id="recAllBtn" title="Recognize text on many images at once">
+      <svg viewBox="0 0 24 24"><path d="M5 6h14M9 6v12M15 10h4M17 10v8"/></svg>
+      Recognize all
+    </button>
+    <button class="btn primary" id="exportBtn">
+      <svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+      Export dataset
+    </button>
+    <button class="btn icon ghost panel-toggle" id="toggleRight" title="Show / hide the Lines panel (Ctrl+Alt+B)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/><path class="fill" d="M15.8 5H20v14h-4.2z"/></svg></button>
+    <button class="btn icon ghost" id="settingsBtn" title="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+    <button class="btn icon ghost" id="helpBtn" title="Keyboard shortcuts (?)">?</button>
+  </div>
+</header>
+
+<!-- job progress strip -->
+<div class="jobbar" id="jobbar" hidden>
+  <div class="jobbar-fill" id="jobFill"></div>
+  <div class="jobbar-content">
+    <span class="spinner"></span>
+    <span id="jobText">Working…</span>
+    <button class="btn tiny ghost" id="jobCancel">Cancel</button>
+  </div>
+</div>
+
+<main class="layout" id="layout">
+  <!-- ================= Image queue ================= -->
+  <aside class="queue" id="queuePanel">
+    <div class="panel-title">
+      <span>IMAGES <span class="muted" id="imgCount"></span></span>
+      <button class="mini" id="collapseLeft" title="Hide panel (Ctrl+B)"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+    </div>
+    <div class="queue-head">
+      <label class="btn primary block" id="uploadLabel">
+        <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+        Upload images
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      </label>
+      <div class="filters" id="filters">
+        <button data-filter="all" class="on">All</button>
+        <button data-filter="todo">To review</button>
+        <button data-filter="new">New</button>
+        <button data-filter="done">Done</button>
+      </div>
+    </div>
+    <div class="queue-list" id="queueList"></div>
+    <div class="queue-foot muted small" id="queueFoot"></div>
+    <div class="sash" id="sashLeft" title="Drag to resize · double-click to reset"></div>
+  </aside>
+
+  <!-- ================= Stage ================= -->
+  <section class="stage-wrap">
+    <div class="toolbar">
+      <div class="seg" id="modeSeg">
+        <button data-mode="boxes" class="on" title="Review detection boxes (1)">
+          <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="4" rx="1"/><rect x="4" y="14" width="11" height="4" rx="1"/></svg>
+          Boxes
+        </button>
+        <button data-mode="text" title="Review recognized text (2)">
+          <svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13"/></svg>
+          Text
+        </button>
+      </div>
+      <span class="sep"></span>
+      <div class="seg" id="toolSeg">
+        <button data-tool="select" class="on" title="Select / move / resize (V)">
+          <svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-2 6z"/></svg>
+        </button>
+        <button data-tool="draw" title="Draw new line box (B)">
+          <svg viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="10" rx="1" stroke-dasharray="3 2"/><path d="M12 10v4M10 12h4"/></svg>
+        </button>
+      </div>
+      <button class="btn icon ghost" id="undoBtn" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <button class="btn icon ghost" id="redoBtn" title="Redo (Ctrl+Shift+Z)"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+      <button class="btn icon ghost" id="delBtn" title="Delete selected box (Del)"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      <button class="btn icon ghost" id="filmBtn" title="Show / hide the filmstrip"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 6v12M17 6v12"/></svg></button>
+      <div class="grow"></div>
+      <span class="save-state" id="saveState"></span>
+      <button class="btn small" id="detectOneBtn" title="Run detection on this image only">Detect this</button>
+      <button class="btn small" id="recOneBtn" title="Recognize all lines of this image (R)">Recognize this</button>
+    </div>
+
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="canvas"></canvas>
+      <div class="empty-state" id="emptyState">
+        <div class="drop-art">
+          <svg viewBox="0 0 64 64"><rect x="8" y="12" width="48" height="40" rx="4"/><path d="M16 24h32M16 32h24M16 40h28"/></svg>
+        </div>
+        <h2>Drop document images here</h2>
+        <p>Upload scans or photos of pages. Then run <b>Detect all</b> to find text lines, check the boxes, run <b>Recognize all</b>, and fix the text.</p>
+        <label class="btn primary">Choose images<input type="file" accept="image/*" multiple hidden class="fileInput2"></label>
+      </div>
+      <div class="banner" id="banner" hidden></div>
+      <!-- scrollbars -->
+      <div class="sbar v" id="sbarV"><div class="thumb"></div></div>
+      <div class="sbar h" id="sbarH"><div class="thumb"></div></div>
+      <!-- zoom dock -->
+      <div class="zoom-dock" id="zoomDock">
+        <button id="zoomOut" title="Zoom out (Ctrl + scroll down, or -)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+        <input type="range" id="zoomSlider" min="0" max="1000" value="500" title="Zoom">
+        <button id="zoomIn" title="Zoom in (Ctrl + scroll up, or +)"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+        <div class="zoom-pct-wrap">
+          <button id="zoomPct" class="mono" title="Zoom presets">100%</button>
+          <div class="zoom-menu" id="zoomMenu" hidden>
+            <button data-z="fit">Fit page <kbd>F</kbd></button>
+            <button data-z="width">Fit width <kbd>W</kbd></button>
+            <hr>
+            <button data-z="0.5">50%</button>
+            <button data-z="1">100% <kbd>0</kbd></button>
+            <button data-z="1.5">150%</button>
+            <button data-z="2">200%</button>
+            <button data-z="4">400%</button>
+          </div>
+        </div>
+        <span class="dock-sep"></span>
+        <button id="zoomFit" title="Fit page (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      </div>
+      <div class="nav-hint small" id="navHint">Scroll to move · <b>Ctrl + scroll</b> to zoom · drag empty space to pan</div>
+    </div>
+
+    <div class="filmstrip" id="filmstrip" hidden>
+      <button class="film-arrow" id="filmLeft" title="Scroll left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="film-track" id="filmTrack"></div>
+      <button class="film-arrow" id="filmRight" title="Scroll right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <span class="film-count mono small" id="filmCount"></span>
+    </div>
+    <div class="approve-bar">
+      <button class="btn ghost" id="prevBtn" title="Previous image (← / PageUp)">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg> Prev
+      </button>
+      <div class="img-meta" id="imgMeta"></div>
+      <button class="btn success big" id="approveBtn" title="Approve and go to the next image (Enter / Ctrl+Enter)">
+        <svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>
+        <span id="approveLbl">Approve boxes &amp; next</span>
+      </button>
+      <button class="btn ghost" id="nextBtn" title="Next image (→ / PageDown)">
+        Next <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= Lines panel ================= -->
+  <aside class="lines" id="linesPanel">
+    <div class="sash" id="sashRight" title="Drag to resize · double-click to reset"></div>
+    <div class="lines-head">
+      <div>
+        <div class="title" id="linesTitle">Lines</div>
+        <div class="muted small" id="linesSub"></div>
+      </div>
+      <label class="switch small" title="Show only lines with low confidence or where the decoders disagree">
+        <input type="checkbox" id="lowOnly"><span></span> Only lines to check
+      </label>
+      <button class="mini" id="collapseRight" title="Hide panel (Ctrl+Alt+B)"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="lines-list" id="linesList"></div>
+  </aside>
+</main>
+
+<!-- drag overlay -->
+<div class="drop-overlay" id="dropOverlay" hidden>
+  <div><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg><div>Drop images to upload</div></div>
+</div>
+
+<!-- modals -->
+<div class="modal-bg" id="modalBg" hidden>
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
